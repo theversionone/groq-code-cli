@@ -587,7 +587,7 @@ function isBinaryFile(filename: string): boolean {
 /**
  * Execute a shell command or run code
  */
-export async function executeCommand(command: string, commandType: string, workingDirectory?: string, timeout: number = 30000): Promise<ToolResult> {
+export async function executeCommand(command: string, commandType: string, workingDirectory?: string, timeout: number = 60000): Promise<ToolResult> {
   try {
     // Validate command type
     if (!['bash', 'python', 'setup', 'run'].includes(commandType)) {
@@ -611,6 +611,25 @@ export async function executeCommand(command: string, commandType: string, worki
         execCommand = `python -c "${command.replace(/"/g, '\\"')}"`;
       } else {
         execCommand = command;
+        
+        // Intelligent handling for common network commands to prevent infinite runs
+        // Auto-add iteration limits if not specified
+        if (command.match(/^ping\s+(?!.*(-c|-n|-w))/) ) {
+          // Detect OS and add appropriate limit flag
+          const isWindows = process.platform === 'win32';
+          if (isWindows) {
+            execCommand = command.replace(/^ping\s+/, 'ping -n 4 ');
+          } else {
+            execCommand = command.replace(/^ping\s+/, 'ping -c 4 ');
+          }
+        } else if (command.match(/^traceroute\s+(?!.*(-m|--max-hops))/) || command.match(/^tracert\s+(?!.*(-h|\/h))/)) {
+          // Limit traceroute hops if not specified
+          if (command.startsWith('tracert')) {
+            execCommand = command.replace(/^tracert\s+/, 'tracert -h 15 ');
+          } else {
+            execCommand = command.replace(/^traceroute\s+/, 'traceroute -m 15 ');
+          }
+        }
       }
 
       const { stdout, stderr } = await execAsync(execCommand, { timeout });

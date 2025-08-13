@@ -139,13 +139,13 @@ export const EXECUTE_COMMAND_SCHEMA: ToolSchema = {
   type: 'function',
   function: {
     name: 'execute_command',
-    description: 'Run shell commands, scripts, or code. SAFETY WARNING: Only use for commands that COMPLETE and EXIT (test scripts, build commands, short-running scripts). NEVER use for commands that run indefinitely (flask server, node app starting, python -m http.server, etc.). Always prefer short-running commands that exit. Example: {"command": "npm test", "command_type": "bash"}',
+    description: 'Run shell/network commands, scripts, or code. Network tools supported: ping, traceroute, nslookup, dig, curl, wget, netstat, arp, ifconfig. Auto-limits applied: ping (4 count), traceroute (15 hops). Commands timeout after 60 seconds. Example: {"command": "ping google.com", "command_type": "bash"}',
     parameters: {
       type: 'object',
       properties: {
         command: {
           type: 'string',
-          description: 'Shell command to execute. Only use commands that exit/stop automatically. Examples: "python my_script.py", "npm test", "ls -la". Avoid: long-running commands, "npm start" (starts servers), etc.'
+          description: 'Shell command to execute. Network commands like "ping" and "traceroute" auto-limit iterations (4 pings, 15 hops). For manual control use: "ping -c 4" (Linux/Mac) or "ping -n 4" (Windows). Examples: "ping google.com", "nslookup example.com", "curl https://api.example.com". Avoid infinite loops and servers.'
         },
         command_type: {
           type: 'string',
